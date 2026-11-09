@@ -1,0 +1,18 @@
+frame_id: map
+points:
+  - name: home
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  - name: point_a
+    x: 1.0
+    y: 0.0
+    yaw: 0.0
+  - name: point_b
+    x: 1.0
+    y: 1.0
+    yaw: 1.57
+  - name: point_c
+    x: 0.0
+    y: 1.0
+    yaw: 3.14

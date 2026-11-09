@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────
+# 白名单策略：默认忽略根目录全部内容，只放行源码与演示材料
+# 这样即使误执行 git add . 也不会把 20+ GB 的教程资料传上去
+# ─────────────────────────────────────────────
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/arms
+!/robot_ws
+!/course
+!/poster
+!/report
+!/maps
+
+# ── 通用垃圾 ──
+**/__pycache__/
+**/*.py[cod]
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+**/*.swp
+**/*.tmp
+
+# ── 备份与临时文件 ──
+**/*.bak
+**/*.bak_*
+**/*.orig
+**/*~
+**/.build/
+**/node_modules/
+
+# ── ROS 2 构建产物 ──
+**/build/
+**/install/
+**/log/
+**/.colcon/
+**/bags/
+
+# ── 模型权重（体积大，按需自行放入）──
+**/*.pt
+**/*.onnx
+**/*.engine
+**/*.rknn
+**/*.bin
+
+# ── 压缩包与本地凭据 ──
+**/*.zip
+**/.env
+**/.env.*
+**/id_rsa*
+**/*.pem
+
+# ── 保留为空目录占位 ──
+!**/.gitkeep
+
+# 只保留 bridge，厂商 SDK 不随仓库分发
+/arms/*
+!/arms/bridge

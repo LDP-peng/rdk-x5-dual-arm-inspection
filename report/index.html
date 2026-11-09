@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="双机械臂主从遥操作移动巡检作业系统项目报告">
+  <title>双机械臂主从遥操作移动巡检作业系统 · 项目报告</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span>双机械臂主从遥操作巡检系统</div>
+    <div class="topbar-actions">
+      <button class="print-btn" type="button" onclick="window.print()">打印 / 导出 PDF</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">CONTENTS / 目录</p>
+      <nav class="toc" aria-label="报告目录">
+        <a href="#overview">01　项目概览</a>
+        <a href="#problem">02　场景痛点</a>
+        <a href="#solution">03　系统方案</a>
+        <a href="#architecture">04　系统架构</a>
+        <a href="#teleoperation">05　主从遥操作</a>
+        <a href="#autonomy">06　底盘自主与避障</a>
+        <a href="#demo">07　演示流程</a>
+        <a href="#results">08　测试结果</a>
+        <a href="#boundary">09　风险与边界</a>
+        <a href="#scenarios">10　应用场景</a>
+        <a href="#roadmap">11　后续规划</a>
+      </nav>
+      <div class="sidebar-meta">
+        <strong>REPORT / V3</strong><br>
+        实机演示口径<br>
+        2026.10.25
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="cover" id="top">
+        <div class="cover-kicker"><span class="dot"></span>PROJECT REPORT · MOBILE INSPECTION</div>
+        <h1>双机械臂<span>主从遥操作</span><br>移动巡检作业系统</h1>
+        <p class="cover-lead">移动机器人负责到达，机械臂负责作业。</p>
+        <p class="cover-desc">
+          面向危险、狭窄、重复的巡检场景，系统以移动底盘完成自主巡航、雷达避障和定点停车；
+          操作员在安全区拖动主臂，车载从臂通过 ROS 2 接收关节状态并完成异构映射，执行按钮、阀门、夹取等接触式作业。
+        </p>
+        <div class="cover-meta">
+          <div><span>PROJECT STAGE</span><strong>Demo V3 · 实机联调</strong></div>
+          <div><span>EDGE PLATFORM</span><strong>RDK X5 · ROS 2 Humble</strong></div>
+          <div><span>CORE LINK</span><strong>主臂 → ROS 2 → 从臂</strong></div>
+          <div><span>FIELD STRATEGY</span><strong>Odom 航点 + 雷达避障</strong></div>
+        </div>
+      </section>
+
+      <div class="metrics" aria-label="关键指标">
+        <div class="metric"><div class="value">2<em>m</em></div><div class="label">自主巡航 / 定点停车距离</div></div>
+        <div class="metric"><div class="value">0.45<em>m</em></div><div class="label">前向障碍触发阈值</div></div>
+        <div class="metric"><div class="value">15<em>Hz</em></div><div class="label">主臂关节状态流</div></div>
+        <div class="metric"><div class="value">≤5<em>cm</em></div><div class="label">2 m 停车重复误差</div></div>
+      </div>
+
+      <section class="section" id="overview">
+        <div class="section-head">
+          <div><span class="index">01 / OVERVIEW</span><h2>项目概览</h2></div>
+          <p>把“到达能力”和“操作能力”解耦，减少人员进入危险现场的频次。</p>
+        </div>
+        <div class="card">
+          <p class="lead">
+            这是一套“移动底盘 + 双机械臂主从遥操作”的巡检作业原型。车端负责自主到达、雷达避障和定点停车；
+            操作端保留人的判断能力，通过主臂把动作实时映射到车载从臂。系统不追求无人化全自动作业，
+            而是先解决现场最实际的问题：人不必进入，手仍然可以伸进去。
+          </p>
+          <div class="cards-3" style="margin-top:18px">
+            <div class="mini-card">
+              <span class="num">01 / REACH</span>
+              <h3>先到得了</h3>
+              <p>里程计闭环完成 2 m 级巡航，N10P 雷达持续守护前向安全距离，到点自动停车。</p>
+            </div>
+            <div class="mini-card">
+              <span class="num">02 / OPERATE</span>
+              <h3>再够得着</h3>
+              <p>主臂关节流经 ROS 2 传到车端，从臂复刻动作，执行夹取、按钮、阀门等接触式作业。</p>
+            </div>
+            <div class="mini-card">
+              <span class="num">03 / SAFE</span>
+              <h3>最后可复现</h3>
+              <p>当前位姿作为零点、软限位、幅度缩放和急停保护，降低异构机械臂首次联调的冲击。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="problem">
+        <div class="section-head">
+          <div><span class="index">02 / PROBLEM</span><h2>场景痛点</h2></div>
+          <p>传统巡检设备解决了“看见”，却没有解决“碰到”。</p>
+        </div>
+        <div class="cards-3">
+          <div class="mini-card">
+            <span class="num">PAIN 01</span>
+            <h3>到不了</h3>
+            <p>变电站、管廊、机房、夜间站厅等场景存在危险源或狭窄通道，人员进入成本高。</p>
+          </div>
+          <div class="mini-card">
+            <span class="num">PAIN 02</span>
+            <h3>够不着</h3>
+            <p>固定摄像头只能查看，无法按下按钮、拉开门锁、转动阀门或取走异物。</p>
+          </div>
+          <div class="mini-card">
+            <span class="num">PAIN 03</span>
+            <h3>不稳定</h3>
+            <p>重复巡检强度大，人工状态容易波动；高风险区域也不适合长时间驻留。</p>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <p class="lead">
+            因此，本项目把任务拆成两段：<strong>底盘把人送到作业点附近的“安全观察位”</strong>，
+            <strong>机械臂代替人手完成接触动作</strong>。人保留判断，机器承担到达与高风险执行。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="solution">
+        <div class="section-head">
+          <div><span class="index">03 / SOLUTION</span><h2>系统方案</h2></div>
+          <p>异构主从映射，不要求两台机械臂同型号、同尺寸。</p>
+        </div>
+        <div class="cards-2">
+          <div class="card">
+            <span class="index" style="color:var(--teal);font-size:10px;font-weight:800;letter-spacing:.14em">ARRIVAL / 到达端</span>
+            <h3 style="margin:8px 0 8px;font-size:20px">移动底盘自主执行</h3>
+            <p class="lead" style="font-size:13px;line-height:1.8">
+              车端 RDK X5 读取 <code>/odom</code> 与 <code>/scan</code>，按任务状态机输出 <code>/cmd_vel</code>。
+              正常段按航点前进，前向 0.45 m 出现障碍时减速并停车；确认安全后继续，最终在巡检点停车。
+            </p>
+            <div class="formula">目标：x = 2.0 m<br>安全阈值：front_range &lt; 0.45 m → stop<br>停车：到达窗口 + 零速保持</div>
+          </div>
+          <div class="card">
+            <span class="index" style="color:var(--teal);font-size:10px;font-weight:800;letter-spacing:.14em">MANIPULATION / 作业端</span>
+            <h3 style="margin:8px 0 8px;font-size:20px">人机协同完成操作</h3>
+            <p class="lead" style="font-size:13px;line-height:1.8">
+              主臂采集关节角，经 ROS 2 主题传到车端。从臂不复制主臂的绝对角度，而是复制相对运动量，
+              从而适配不同型号、不同零位和不同安装姿态。
+            </p>
+            <div class="formula">q_target = clamp(q_zero + scale · s · Δq)<br>scale = 0.3　s = [+1, -1, +1, +1, +1]</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="cards-3">
+            <div><span class="badge ok">已实现</span><h3 style="font-size:14px;margin:8px 0 4px">异构适配</h3><p class="text-muted" style="font-size:12px;line-height:1.6;margin:0">主臂与从臂型号不同，仍可建立动作映射。</p></div>
+            <div><span class="badge ok">已实现</span><h3 style="font-size:14px;margin:8px 0 4px">安全启动</h3><p class="text-muted" style="font-size:12px;line-height:1.6;margin:0">以当前位姿为零点，避免上电瞬间大幅跳动。</p></div>
+            <div><span class="badge ok">已实现</span><h3 style="font-size:14px;margin:8px 0 4px">分层解耦</h3><p class="text-muted" style="font-size:12px;line-height:1.6;margin:0">底盘、雷达、主臂、从臂可独立诊断和降级。</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-head">
+          <div><span class="index">04 / ARCHITECTURE</span><h2>系统架构</h2></div>
+          <p>ROS 2 负责解耦，RDK X5 负责车端编排，I2C 负责末端执行。</p>
+        </div>
+        <div class="card">
+          <div class="arch">
+            <div class="arch-col">
+              <h3>操作端</h3>
+              <div class="arch-node"><strong>Panthera-HT 主臂</strong><small>关节采样 · 人工拖动</small></div>
+              <div class="arch-node"><strong>主臂节点</strong><small>/master/joint_states · 15 Hz</small></div>
+              <div class="arch-node"><strong>图传画面</strong><small>辅助观察 · 安全判断</small></div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-col">
+              <h3>通信与决策</h3>
+              <div class="arch-node accent"><strong>RDK X5</strong><small>车端计算 · ROS 2 Humble</small></div>
+              <div class="arch-node"><strong>异构映射</strong><small>相对位姿 · 限幅 · 方向修正</small></div>
+              <div class="arch-node"><strong>任务状态机</strong><small>前进 · 避障 · 停车 · 返航</small></div>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-col">
+              <h3>作业端</h3>
+              <div class="arch-node"><strong>Dofbot 从臂</strong><small>I2C 0x15 · 5 关节 + 夹爪</small></div>
+              <div class="arch-node"><strong>WHEELTEC C30D</strong><small>差速底盘 · /odom · /cmd_vel</small></div>
+              <div class="arch-node"><strong>N10P 雷达</strong><small>/scan · 10 Hz · 前向避障</small></div>
+            </div>
+          </div>
+          <p class="arch-caption">
+            数据链路分为两条：控制链路（主臂关节流 → 从臂 I2C）与移动链路（里程计 + 雷达 → 底盘）。
+            两条链路独立启动、独立检查，任何一条异常都不影响另一条的安全停机。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="teleoperation">
+        <div class="section-head">
+          <div><span class="index">05 / TELEOPERATION</span><h2>主从遥操作实现</h2></div>
+          <p>复制“相对运动”，而不是复制“绝对角度”。</p>
+        </div>
+        <div class="card">
+          <p class="lead">
+            主臂与从臂的型号、连杆长度、零位定义和安装方向都不同。系统在启动时分别记录主臂与从臂的当前位姿，
+            之后只传输主臂相对零位的增量，再按比例叠加到从臂零位上。这样既避免上电跳变，也让异构机械臂可以用同一套控制逻辑。
+          </p>
+          <div class="formula">
+q_slave_target[i] = clamp( q_slave_zero[i] + scale × sign[i] × ( q_master[i] − q_master_zero[i] ) )<br><br>
+scale = 0.3　　sign = [+1, −1, +1, +1, +1]　　transport = ROS 2 DDS / I2C 0x15
+          </div>
+          <div class="cards-2" style="margin-top:12px">
+            <div class="mini-card">
+              <span class="num">WHY RELATIVE</span>
+              <h3>异构臂可以对齐</h3>
+              <p>相对映射消除了绝对零位差异；幅度缩放 0.3 让主臂的大幅动作转换为从臂可控的小幅动作，减少碰撞风险。</p>
+            </div>
+            <div class="mini-card">
+              <span class="num">SAFETY</span>
+              <h3>三点保护</h3>
+              <p>启动时以当前位姿为零点；每个关节做软限位；主臂数据中断时停止继续下发，不让从臂追一个已经不存在的目标。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-time">T0</div>
+              <div class="timeline-body"><h3>双端零点采样</h3><p>主臂和从臂保持自然姿态，系统分别记录当前关节角，作为本次会话的参考零位。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">T1</div>
+              <div class="timeline-body"><h3>主臂关节流发布</h3><p>主臂节点约 15 Hz 发布 <code>/master/joint_states</code>，包含 5 个关节与夹爪通道。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">T2</div>
+              <div class="timeline-body"><h3>车端接收与映射</h3><p>车端按索引对齐关节，执行方向修正、幅度缩放和软限位，生成从臂目标角。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">T3</div>
+              <div class="timeline-body"><h3>I2C 下发到从臂</h3><p>通过总线 5、地址 <code>0x15</code> 驱动 Dofbot 的 5 个关节与夹爪；读不到设备时直接拒绝启动。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">T4</div>
+              <div class="timeline-body"><h3>持续闭环与恢复</h3><p>操作过程中保持低延迟跟随；松开或退出前先扶住主臂，避免主臂掉电下落。</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>控制项</th><th>当前参数</th><th>工程目的</th></tr></thead>
+            <tbody>
+              <tr><td>主臂数据</td><td><code>/master/joint_states</code> · 约 15 Hz</td><td>保证动作连续，同时避免把高频抖动直接放大到从臂。</td></tr>
+              <tr><td>映射幅度</td><td><code>scale = 0.3</code></td><td>先保证安全与可演示，再逐步放大动作范围。</td></tr>
+              <tr><td>方向修正</td><td>第二关节 <code>sign = −1</code></td><td>解决主从安装方向不一致导致的镜像运动。</td></tr>
+              <tr><td>从臂通信</td><td>I2C bus 5 · address <code>0x15</code></td><td>5 关节 + 夹爪；接线未通过时不允许带故障启动。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="autonomy">
+        <div class="section-head">
+          <div><span class="index">06 / AUTONOMY</span><h2>底盘自主与避障</h2></div>
+          <p>现场空旷，最终主线采用“里程计航点 + 雷达安全层”。</p>
+        </div>
+        <div class="card">
+          <p class="lead">
+            演示场地缺少稳定、可重复利用的建图特征，SLAM 与 AMCL 的现场收敛成本高。
+            最终演示不再把建图作为前置条件，而是让底盘按里程计闭环前进到 2 m 巡检点；
+            N10P 雷达在全程提供前向安全距离，遇障减速、停车，确认后继续或绕行。
+          </p>
+          <div class="cards-3" style="margin-top:16px">
+            <div class="mini-card"><span class="num">STEP 01</span><h3>巡航</h3><p>读取 <code>/odom</code>，输出受限速度，朝目标距离前进。</p></div>
+            <div class="mini-card"><span class="num">STEP 02</span><h3>守护</h3><p>读取 <code>/scan</code> 前向扇区；小于 0.45 m 时触发安全停机。</p></div>
+            <div class="mini-card"><span class="num">STEP 03</span><h3>到达</h3><p>进入停车窗口后零速保持，等待操作员接管机械臂。</p></div>
+          </div>
+          <div class="formula">
+正常段：odom → distance_error → /cmd_vel
+安全层：/scan（前向扇区）→ 0.45 m 阈值 → 减速 / 停车
+任务层：到达 → 作业等待 → 回车确认 → 返航
+          </div>
+        </div>
+        <div class="cards-2" style="margin-top:10px">
+          <div class="card">
+            <span class="badge ok">最终演示主线</span>
+            <h3 style="font-size:16px;margin:9px 0 6px">为什么保留里程计航点</h3>
+            <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0">演示距离固定、起点可控，里程计方案启动快、依赖少、复现稳定。它让评委在最短时间内看到完整闭环，而不是把时间消耗在定位收敛上。</p>
+          </div>
+          <div class="card">
+            <span class="badge warn">扩展能力</span>
+            <h3 style="font-size:16px;margin:9px 0 6px">SLAM / Nav2 的定位</h3>
+            <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0">建图、AMCL 与 Nav2 已保留为后续能力，用于有明确地图和固定巡检路线的场地；本次空旷演示不作为最终链路。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="demo">
+        <div class="section-head">
+          <div><span class="index">07 / DEMO</span><h2>演示流程</h2></div>
+          <p>一条完整链路：自主到达 → 人接管 → 从臂作业 → 自动返航。</p>
+        </div>
+        <div class="card">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-time">00 s</div>
+              <div class="timeline-body"><h3>启动与自检</h3><p>确认 <code>/odom</code>、<code>/scan</code>、主臂关节流和从臂 I2C 0x15 全部在线；车头前方 2 m 内无人、无障碍。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">10 s</div>
+              <div class="timeline-body"><h3>自主前进</h3><p>车端任务节点按里程计闭环向巡检点移动，速度保持低速，雷达持续监测前向安全距离。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">35 s</div>
+              <div class="timeline-body"><h3>避障与通过</h3><p>若前向小于 0.45 m，底盘先减速再停车；障碍解除后恢复，或按演示预案从可用侧向空间绕行。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">50 s</div>
+              <div class="timeline-body"><h3>定点停车</h3><p>进入 2 m 目标窗口后零速保持，切换到主从遥操作，从臂进入待命姿态。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">60 s</div>
+              <div class="timeline-body"><h3>操作员接管</h3><p>操作员拖动主臂，从臂同步复刻动作，完成夹爪闭合或接触式点检动作。</p></div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">85 s</div>
+              <div class="timeline-body"><h3>回车返航</h3><p>操作员确认作业完成并收回机械臂；按回车后底盘沿反向里程计目标返回起点。</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <span class="index" style="color:var(--teal);font-size:10px;font-weight:800;letter-spacing:.14em">DEMO COMMANDS / 演示入口</span>
+          <div class="formula">
+主臂端：python3 ~/master_joint_node.py --ros-args -p config_path:=$HOME/arms/Panthera-HT_SDK/panthera_python/robot_param/Leader.yaml
+车端：　GRIP=1 bash ~/run_full_demo.sh
+降级：　GRIP=0 bash ~/run_full_demo.sh　（夹爪不参与演示）
+          </div>
+          <p class="arch-caption">现场以部署到车端的脚本版本为准。启动顺序先主臂节点、后车端任务，任一链路自检失败都不强行进入演示。</p>
+        </div>
+      </section>
+
+      <section class="section" id="results">
+        <div class="section-head">
+          <div><span class="index">08 / RESULTS</span><h2>测试结果</h2></div>
+          <p>用可复现的结果说话，同时明确尚未完成的部分。</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>模块</th><th>验证内容</th><th>结果</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>自主移动</td><td>2 m 航点、停车、返航</td><td>重复测试停车误差约 5 cm</td><td><span class="badge ok">已跑通</span></td></tr>
+              <tr><td>雷达安全层</td><td><code>/scan</code> 前向扇区、0.45 m 触发</td><td>遇障停车、解除后继续</td><td><span class="badge ok">已跑通</span></td></tr>
+              <tr><td>主臂关节流</td><td><code>/master/joint_states</code> 频率与稳定性</td><td>约 15 Hz 连续输出</td><td><span class="badge ok">已跑通</span></td></tr>
+              <tr><td>主从映射</td><td>异构索引、方向、幅度、夹爪通道</td><td>dry-run 与实机跟随已验证</td><td><span class="badge warn">现场联调中</span></td></tr>
+              <tr><td>一键演示</td><td>前进 → 停车 → 接管 → 返航</td><td>脚本链路可执行，需现场彩排</td><td><span class="badge warn">联调中</span></td></tr>
+              <tr><td>视觉抓取</td><td>HSV / YOLO 颜色积木识别</td><td>完成技术验证，未进入最终演示</td><td><span class="badge warn">实验项</span></td></tr>
+              <tr><td>SLAM / Nav2</td><td>建图、AMCL、全局规划</td><td>保留为扩展，不作为空旷场地主线</td><td><span class="badge warn">扩展项</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <h3 style="margin:0 0 4px;font-size:15px">链路频率概览</h3>
+          <p class="text-muted" style="margin:0;font-size:11px;line-height:1.6">以实际运行日志为准；频率只需满足控制连续性，不以越高越好。</p>
+          <div class="freq-chart" aria-label="链路频率">
+            <div class="freq-row"><span>/odom</span><div class="freq-track"><div class="freq-fill" style="width:100%"></div></div><span>20 Hz</span></div>
+            <div class="freq-row"><span>/cmd_vel</span><div class="freq-track"><div class="freq-fill" style="width:95%"></div></div><span>20 Hz</span></div>
+            <div class="freq-row"><span>/master</span><div class="freq-track"><div class="freq-fill" style="width:75%"></div></div><span>15 Hz</span></div>
+            <div class="freq-row"><span>/scan</span><div class="freq-track"><div class="freq-fill" style="width:50%"></div></div><span>10 Hz</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="boundary">
+        <div class="section-head">
+          <div><span class="index">09 / BOUNDARY</span><h2>风险与边界</h2></div>
+          <p>把系统能力说准确，比把 demo 说得更“智能”更重要。</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>风险点</th><th>可能表现</th><th>当前处理</th><th>后续动作</th></tr></thead>
+            <tbody>
+              <tr><td>里程计累积误差</td><td>长距离后停车点偏移</td><td>控制演示距离；到点后低速零速保持</td><td>加入轮速标定与二次定位</td></tr>
+              <tr><td>雷达盲区 / 低矮障碍</td><td>贴地小物体或特定角度未触发</td><td>前向扇区阈值 + 人工观察</td><td>多传感器融合与下视感知</td></tr>
+              <tr><td>异构臂映射误差</td><td>关节方向不一致或末端偏差</td><td>索引对齐、方向修正、幅度缩放</td><td>关节标定与末端闭环校正</td></tr>
+              <tr><td>夹爪热与机械卡滞</td><td>夹持力下降、舵机发热</td><td>限制连续作业时长；先空载检查</td><td>更换高扭矩执行器与力反馈</td></tr>
+              <tr><td>现场光照与反光</td><td>视觉识别不稳定</td><td>视觉不进入最终演示主线</td><td>A/B 光位、深度相机或主动补光</td></tr>
+              <tr><td>通信中断</td><td>从臂停在上一目标</td><td>停止继续下发，主臂端先扶稳</td><td>心跳超时与自动归位策略</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cards-2" style="margin-top:10px">
+          <div class="card">
+            <span class="badge warn">能力边界</span>
+            <h3 style="font-size:16px;margin:9px 0 6px">不是全自主抓取</h3>
+            <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0">当前系统是“自主到达 + 人在环遥操作”。目标识别和抓取策略有实验验证，但最终演示不依赖视觉自动抓取，也不宣称复杂物体泛化能力。</p>
+          </div>
+          <div class="card">
+            <span class="badge warn">场地边界</span>
+            <h3 style="font-size:16px;margin:9px 0 6px">不是全场景 SLAM 导航</h3>
+            <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0">空旷场地缺少稳定特征，最终以固定起点的里程计航点完成闭环。地图导航能力保留为后续在有边界、有结构的巡检场景中扩展。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="scenarios">
+        <div class="section-head">
+          <div><span class="index">10 / SCENARIOS</span><h2>应用场景</h2></div>
+          <p>从“看得见”升级到“够得着、操作得了”。</p>
+        </div>
+        <div class="scenario-grid">
+          <div class="scenario"><span class="num">01</span><h3>变电站 / 配电房</h3><p>按按钮、开柜门、测温取样；人员留在安全区完成高风险点检。</p></div>
+          <div class="scenario"><span class="num">02</span><h3>地铁站 / 隧道管廊</h3><p>夜间巡检、清障、设备复位；减少封闭空间内的人员暴露。</p></div>
+          <div class="scenario"><span class="num">03</span><h3>化工 / 核工业</h3><p>从臂进入危险区执行阀门操作与取样，主臂在安全区复刻动作。</p></div>
+          <div class="scenario"><span class="num">04</span><h3>仓储 / 机房</h3><p>夜间盘点、货架取放、阀门与开关操作，把移动能力接入作业流程。</p></div>
+          <div class="scenario"><span class="num">05</span><h3>应急救援 / 安防</h3><p>先遣侦察、开门、移障；人不在第一时间进入未知环境。</p></div>
+          <div class="scenario"><span class="num">06</span><h3>教学科研</h3><p>作为 ROS 2、异构主从、移动操作与边缘 AI 的综合实验平台。</p></div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <p class="lead">
+            系统真正有价值的不是“车会走”，也不是“机械臂会动”，而是把移动机器人的<strong>到达能力</strong>
+            与机械臂的<strong>接触作业能力</strong>接到同一条任务链上：车把人送到安全观察位，人的动作被安全地延伸到现场。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="roadmap">
+        <div class="section-head">
+          <div><span class="index">11 / ROADMAP</span><h2>后续规划</h2></div>
+          <p>先把 demo 做稳，再把能力做成产品。</p>
+        </div>
+        <div class="roadmap">
+          <div class="roadmap-item">
+            <span class="badge ok">0–1 个月</span>
+            <h3 style="margin-top:9px">演示可靠性</h3>
+            <p>完善一键启动、状态自检、异常提示与现场彩排；固定主从零位流程，补齐夹爪温度与机械限位保护。</p>
+          </div>
+          <div class="roadmap-item">
+            <span class="badge ok">1–3 个月</span>
+            <h3 style="margin-top:9px">感知与定位</h3>
+            <p>在有结构的真实场地接入 SLAM / AMCL / Nav2；加入轮速标定、视觉辅助定位和相机画面叠加。</p>
+          </div>
+          <div class="roadmap-item">
+            <span class="badge ok">3–6 个月</span>
+            <h3 style="margin-top:9px">作业能力升级</h3>
+            <p>引入末端视觉伺服、力/触觉反馈、多工位任务编排；从“人复制动作”走向“人监督、机器执行”。</p>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:18px">
+          <span class="kicker">DESIGN PRINCIPLE / 设计原则</span>
+          <p>移动机器人负责到达，机械臂负责作业；<br>人负责判断，机器负责执行。</p>
+          <small>本报告以实机演示链路为准，明确区分已跑通、联调中和非最终链路能力。</small>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>双机械臂主从遥操作移动巡检作业系统 · 项目技术报告</div>
+        <div>RDK X5 · ROS 2 Humble · Panthera-HT · Dofbot · N10P</div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="report.js"></script>
+</body>
+</html>

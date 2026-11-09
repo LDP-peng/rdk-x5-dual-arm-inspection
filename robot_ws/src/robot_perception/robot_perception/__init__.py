@@ -1,0 +1,1 @@
+"""Fire and smoke perception package for the RDK X5 robot."""

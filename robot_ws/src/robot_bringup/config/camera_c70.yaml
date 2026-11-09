@@ -1,0 +1,13 @@
+# C70 USB camera settings for hobot_usb_cam.
+# robot_bringup/launch/robot.launch.py converts these into launch arguments.
+hobot_usb_cam:
+  ros__parameters:
+    video_device: "/dev/video0"
+    pixel_format: "mjpeg"
+    image_width: 640
+    image_height: 480
+    framerate: 30
+    io_method: "mmap"
+    frame_id: "camera_link"
+    zero_copy: false
+    camera_calibration_file_path: ""

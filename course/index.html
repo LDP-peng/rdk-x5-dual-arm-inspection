@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ROS2 机器人入门课：从节点、话题、服务、动作，到雷达避障、机械臂与主从遥操作。">
+  <title>ROS2 机器人入门课 · 从节点到巡检系统</title>
+  <script>try{var t=localStorage.getItem('ros2-course-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="返回课程首页">
+      <span class="brand-mark">R2</span>
+      <span class="brand-text">ROS2 机器人课<small>Robot Course</small></span>
+    </a>
+    <nav class="topnav" aria-label="顶部导航">
+      <a href="#path">学习路线</a>
+      <a href="#modules">课程模块</a>
+      <a href="#architecture">系统架构</a>
+      <a href="#commands">命令速查</a>
+      <a href="#lab">实战链路</a>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="themeToggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn menu-btn" id="menuToggle" type="button" aria-label="打开课程目录" title="打开课程目录">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="scroll-track" aria-hidden="true"><div id="scrollProgress"></div></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="课程目录">
+    <div class="sidebar-head"><span>Course Index</span><span id="progressText">0%</span></div>
+    <div class="side-progress" aria-hidden="true"><i id="sideProgressBar"></i></div>
+    <nav class="side-nav">
+      <a href="#top" class="active"><span class="idx">00</span>课程首页</a>
+      <a href="#path"><span class="idx">01</span>学习路线</a>
+      <a href="#modules"><span class="idx">02</span>课程模块</a>
+      <a href="#m1" class="sub">1 · ROS2 世界观</a>
+      <a href="#m2" class="sub">2 · 环境搭建</a>
+      <a href="#m3" class="sub">3 · 工作空间与功能包</a>
+      <a href="#m4" class="sub">4 · 节点：系统最小单元</a>
+      <a href="#m5" class="sub">5 · 话题：数据高速公路</a>
+      <a href="#m6" class="sub">6 · 服务、动作与接口</a>
+      <a href="#m7" class="sub">7 · 参数、Launch 与 TF</a>
+      <a href="#m8" class="sub">8 · DDS、QoS 与分布式</a>
+      <a href="#m9" class="sub">9 · 实战：巡检闭环</a>
+      <a href="#architecture"><span class="idx">03</span>系统架构</a>
+      <a href="#commands"><span class="idx">04</span>命令速查</a>
+      <a href="#lab"><span class="idx">05</span>实战链路</a>
+      <a href="#quiz"><span class="idx">06</span>自测</a>
+      <a href="#faq"><span class="idx">07</span>常见问题</a>
+    </nav>
+    <div class="side-foot">
+      <button id="resetProgress" type="button">重置学习进度</button>
+    </div>
+  </aside>
+
+  <main class="main" id="top">
+    <section class="hero">
+      <div>
+        <div class="eyebrow"><span class="dot"></span>Beginner → Practitioner</div>
+        <h1>从一条 <span class="grad">/cmd_vel</span><br>搭起机器人系统</h1>
+        <p>面向移动机器人与机械臂初学者的 ROS2 入门课。先理解节点、话题、服务和动作，再看懂分层架构与计算图，最后把雷达避障、里程计、机械臂和主从遥操作串成一条可复现的链路。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#path">
+            开始学习
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="#commands">命令速查</a>
+          <a class="btn btn-ghost" href="#lab">直接看实战</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><strong>09</strong><span>课程模块</span></div>
+          <div class="stat"><strong>21</strong><span>核心概念</span></div>
+          <div class="stat"><strong>06</strong><span>动手实验</span></div>
+          <div class="stat"><strong>01</strong><span>完整巡检链路</span></div>
+        </div>
+      </div>
+
+      <div class="terminal-card" aria-label="ROS2 终端示例">
+        <div class="terminal-head">
+          <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+          <span class="term-title">ros2 · humble</span>
+        </div>
+        <div class="terminal-body">
+          <div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">source /opt/tros/humble/setup.bash</span></div>
+          <div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">ros2 run demo_nodes_cpp talker</span></div>
+          <div class="term-line"><span class="term-ok">[INFO]</span> <span class="term-out">[talker]: Publishing: 'Hello World: 1'</span></div>
+          <div class="term-line"><span class="term-ok">[INFO]</span> <span class="term-out">[talker]: Publishing: 'Hello World: 2'</span></div>
+          <div class="term-line">&nbsp;</div>
+          <div class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">ros2 topic echo /chatter</span></div>
+          <div class="term-line"><span class="term-key">data:</span> <span class="term-out">'Hello World: 2'</span></div>
+          <div class="term-line">&nbsp;</div>
+          <div class="term-line"><span class="term-warn"># 一个节点发，一个节点收</span></div>
+          <div class="term-line"><span class="term-warn"># 中间连接它们的，就是 Topic</span></div>
+        </div>
+        <div class="terminal-foot">
+          <span class="chip">Node</span>
+          <span class="chip">Topic</span>
+          <span class="chip">DDS</span>
+          <span class="chip">QoS</span>
+          <span class="chip">TF2</span>
+          <span class="chip">Nav2</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="path">
+      <div class="section-head">
+        <div class="kicker">Learning Path</div>
+        <h2>四步走，不要一上来啃源码</h2>
+        <p>先建立系统地图，再把环境跑通；通信机制是 ROS2 的主干，最后用一条真实链路把知识钉住。每一阶段都配了可执行命令和检查点。</p>
+      </div>
+      <div class="path-grid">
+        <article class="path-card" data-step="01">
+          <div class="step">STAGE 01</div>
+          <h3>建立认知</h3>
+          <p>知道 ROS2 解决什么问题，分清节点、话题、服务、动作，理解 ROS1 与 ROS2 的架构差异。</p>
+          <div class="tags"><span class="tag">架构</span><span class="tag">DDS</span><span class="tag">计算图</span></div>
+        </article>
+        <article class="path-card" data-step="02">
+          <div class="step">STAGE 02</div>
+          <h3>搭好环境</h3>
+          <p>Ubuntu + Humble，或 RDK X5 的 TROS Humble；装好 VS Code、colcon，能建包、编译、运行。</p>
+          <div class="tags"><span class="tag">安装</span><span class="tag">工作空间</span><span class="tag">colcon</span></div>
+        </article>
+        <article class="path-card" data-step="03">
+          <div class="step">STAGE 03</div>
+          <h3>打通通信</h3>
+          <p>写发布者/订阅者，调用服务与动作，改参数，写 Launch，理解 TF 坐标树和 URDF 模型。</p>
+          <div class="tags"><span class="tag">Topic</span><span class="tag">Service</span><span class="tag">Action</span></div>
+        </article>
+        <article class="path-card" data-step="04">
+          <div class="step">STAGE 04</div>
+          <h3>跑通系统</h3>
+          <p>雷达避障 + 里程计目标点 + 机械臂动作 + 主从映射，形成一条能演示、能复盘的巡检链路。</p>
+          <div class="tags"><span class="tag">巡检</span><span class="tag">避障</span><span class="tag">主从</span></div>
+        </article>
+      </div>
+      <div class="note"><strong>学习原则：</strong>每学一个概念，至少敲一遍命令；每跑一个节点，先看 <code>ros2 node list</code>、<code>ros2 topic list</code>，再看代码。不要只读不跑。</div>
+    </section>
+
+    <section class="section" id="modules">
+      <div class="section-head">
+        <div class="kicker">Curriculum</div>
+        <h2>九个模块，从概念到能跑的系统</h2>
+        <p>每个模块包含学习目标、关键概念、命令示例和一个小练习。第一次学建议按顺序；赶项目可以直接跳到第 9 模块。</p>
+      </div>
+
+      <details class="module" id="m1" open>
+        <summary>
+          <span class="module-num">01</span>
+          <span class="module-info"><h3>ROS2 世界观：它到底在解决什么</h3><p>机器人软件为什么需要“节点 + 通信 + 工具链”</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">15 min</span><input class="module-check" data-module="m1" type="checkbox" aria-label="标记第 1 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>理解</strong>ROS2 不是操作系统内核，而是机器人软件的通信与工具框架。</div>
+            <div class="objective"><strong>分清</strong>节点、话题、服务、动作、参数各自适合什么场景。</div>
+            <div class="objective"><strong>说出</strong>ROS1 的 Master 架构与 ROS2 的 DDS 去中心化架构差异。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>节点 Node</h4><p>一个独立进程，负责一件小事，例如读雷达、算避障、控底盘。节点之间通过接口通信。</p></div>
+            <div class="concept"><h4>话题 Topic</h4><p>发布/订阅，异步、多对多。适合持续数据流：<code>/scan</code>、<code>/odom</code>、<code>/image_raw</code>。</p></div>
+            <div class="concept"><h4>服务 Service</h4><p>请求/响应，一对一、短任务。适合“查一次状态”“触发一次校准”。</p></div>
+            <div class="concept"><h4>动作 Action</h4><p>目标 + 反馈 + 结果，可取消。适合“移动到目标点”“机械臂执行一段轨迹”。</p></div>
+            <div class="concept"><h4>参数 Parameter</h4><p>节点的配置字典。速度、阈值、目标点都可以做成参数，启动时覆盖。</p></div>
+            <div class="concept"><h4>DDS</h4><p>ROS2 的中间件。负责节点发现、数据分发和 QoS 策略，不需要中心 Master。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 最小发布订阅</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>source /opt/ros/humble/setup.bash
+ros2 run demo_nodes_cpp talker
+# 另开一个终端
+ros2 run demo_nodes_cpp listener</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>开两个终端跑通 talker/listener，再执行 <code>ros2 node list</code> 和 <code>ros2 topic list</code>，说出哪个节点发布、哪个节点订阅。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m2">
+        <summary>
+          <span class="module-num">02</span>
+          <span class="module-info"><h3>环境搭建：Ubuntu、Humble 与 RDK X5</h3><p>把“能运行”这件事先解决，别在环境上耗一整天</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">30 min</span><input class="module-check" data-module="m2" type="checkbox" aria-label="标记第 2 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>安装</strong>Ubuntu 22.04 + ROS2 Humble，或使用 RDK X5 自带的 TROS Humble。</div>
+            <div class="objective"><strong>配置</strong>环境变量、ROS_DOMAIN_ID、VS Code 与终端工作区。</div>
+            <div class="objective"><strong>验证</strong>用 turtlesim 和 <code>ros2 doctor</code> 确认环境正常。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>ROS2 Humble</h4><p>Ubuntu 22.04 的长期支持版本，生态最全。普通电脑、虚拟机、RDK 上都以它为主。</p></div>
+            <div class="concept"><h4>TROS Humble</h4><p>RDK X5 的 ROS2 发行版，包含地平线扩展包与 BPU 相关工具。先 source TROS，再 source 普通 ROS2。</p></div>
+            <div class="concept"><h4>ROS_DOMAIN_ID</h4><p>同一局域网内，只有 Domain ID 相同的节点才能互相发现。多机调试时先统一它。</p></div>
+            <div class="concept"><h4>ros2 doctor</h4><p>环境体检工具，检查网络、RMW、平台和依赖问题。排障第一步。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 环境与验证</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code># 普通 Ubuntu
+source /opt/ros/humble/setup.bash
+
+# RDK X5：先加载 TROS，再加载 ROS2
+source /opt/tros/humble/setup.bash
+source /opt/ros/humble/setup.bash
+
+export ROS_DOMAIN_ID=0
+ros2 doctor
+ros2 run turtlesim turtlesim_node
+# 另开终端
+ros2 run turtlesim turtle_teleop_key</code></pre>
+          </div>
+          <div class="note"><strong>RDK 提醒：</strong>只 source 普通 ROS2 时，摄像头、BPU、TROS 包可能找不到；只 source TROS 时，部分通用包又可能缺。最稳的顺序是先 TROS 后 ROS2。</div>
+          <div class="exercise"><strong>练习：</strong>跑起小乌龟，用方向键控制它；再执行 <code>ros2 topic list -t</code>，找到 <code>/turtle1/cmd_vel</code> 的消息类型。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m3">
+        <summary>
+          <span class="module-num">03</span>
+          <span class="module-info"><h3>工作空间与功能包：代码放在哪、怎么编译</h3><p>理解 src / build / install / log，学会用 colcon 建包</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">25 min</span><input class="module-check" data-module="m3" type="checkbox" aria-label="标记第 3 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>看懂</strong>工作空间的四个目录，知道源码和编译产物分别在哪。</div>
+            <div class="objective"><strong>创建</strong>Python 包和 C++ 包，理解 <code>package.xml</code> 与依赖声明。</div>
+            <div class="objective"><strong>编译</strong>用 <code>colcon build</code> 和 <code>--symlink-install</code> 提高迭代效率。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>src</h4><p>你的源码和功能包放这里。一个工作空间可以有多个包，每个包独立声明依赖。</p></div>
+            <div class="concept"><h4>build / install / log</h4><p>编译中间文件、最终可运行文件和日志。不要手改，出问题可以整个删掉重编。</p></div>
+            <div class="concept"><h4>ament_python</h4><p>Python 包，入口在 <code>setup.py</code> 的 <code>entry_points</code>，适合写任务节点、视觉节点。</p></div>
+            <div class="concept"><h4>ament_cmake</h4><p>C++ 包，入口在 <code>CMakeLists.txt</code>，适合高性能驱动、算法库。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 建包与编译</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>mkdir -p ~/robot_ws/src
+cd ~/robot_ws/src
+ros2 pkg create --build-type ament_python my_first_pkg --dependencies rclpy
+cd ~/robot_ws
+colcon build --symlink-install
+source install/setup.bash
+ros2 pkg list | grep my_first_pkg</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>创建 <code>my_first_pkg</code>，在 <code>setup.py</code> 里注册一个可执行文件，写一个只打印 “hello robot” 的节点并用 <code>ros2 run</code> 跑起来。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m4">
+        <summary>
+          <span class="module-num">04</span>
+          <span class="module-info"><h3>节点：机器人系统的最小工作单元</h3><p>一个节点只做一件事，然后通过接口和别人协作</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">30 min</span><input class="module-check" data-module="m4" type="checkbox" aria-label="标记第 4 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>写出</strong>一个最小 rclpy 节点，理解 init / spin / destroy 的生命周期。</div>
+            <div class="objective"><strong>使用</strong>命名空间、重映射和 <code>ros2 node info</code> 排查节点。</div>
+            <div class="objective"><strong>避免</strong>在回调里做重活，理解执行器与回调组的意义。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>一个节点一件事</h4><p>雷达驱动、避障决策、底盘控制、机械臂控制应拆成不同节点。拆开后才能单独测试和替换。</p></div>
+            <div class="concept"><h4>命名空间</h4><p><code>/robot1</code>、<code>/robot2</code> 可以隔离两台设备的同名话题，避免互相干扰。</p></div>
+            <div class="concept"><h4>重映射</h4><p>启动时把 <code>/cmd_vel</code> 改成 <code>/robot1/cmd_vel</code>，不改代码就能适配不同机器人。</p></div>
+            <div class="concept"><h4>回调与执行器</h4><p>回调里只做轻量处理；耗时任务交给线程、定时器或独立节点，避免阻塞订阅。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">python · 最小节点</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>import rclpy
+from rclpy.node import Node
+
+class HelloNode(Node):
+    def __init__(self):
+        super().__init__('hello_node')
+        self.create_timer(1.0, self.tick)
+
+    def tick(self):
+        self.get_logger().info('hello robot')
+
+def main():
+    rclpy.init()
+    node = HelloNode()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 观察节点</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>ros2 node list
+ros2 node info /hello_node
+ros2 run my_first_pkg hello --ros-args -r __ns:=/robot1</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>把节点放到 <code>/robot1</code> 命名空间，观察 <code>ros2 node list</code> 的名称变化；再用 <code>ros2 node info</code> 看它发布了哪些话题。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m5">
+        <summary>
+          <span class="module-num">05</span>
+          <span class="module-info"><h3>话题：机器人数据流的高速公路</h3><p>发布/订阅、消息类型、QoS，以及怎么判断数据是否正常</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">35 min</span><input class="module-check" data-module="m5" type="checkbox" aria-label="标记第 5 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>写</strong>一个发布者和一个订阅者，理解消息类型必须一致。</div>
+            <div class="objective"><strong>诊断</strong>用 <code>topic list / echo / hz / info</code> 判断话题是否在发、频率对不对。</div>
+            <div class="objective"><strong>选择</strong>传感器数据使用 SensorDataQoS，普通控制数据使用默认可靠 QoS。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>异步、多对多</h4><p>一个发布者可以有多个订阅者，一个订阅者也可以听多个发布者。发布者不关心谁在听。</p></div>
+            <div class="concept"><h4>消息类型</h4><p><code>std_msgs/msg/String</code>、<code>geometry_msgs/msg/Twist</code>、<code>sensor_msgs/msg/LaserScan</code>。类型不匹配就收不到。</p></div>
+            <div class="concept"><h4>QoS</h4><p>可靠性、历史深度、持久性。雷达和相机常用 Best Effort；底盘控制常用 Reliable。</p></div>
+            <div class="concept"><h4>常见话题</h4><p><code>/scan</code> 雷达、<code>/odom</code> 里程计、<code>/cmd_vel</code> 速度指令、<code>/image_raw</code> 图像。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">python · 发布 /cmd_vel</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>from geometry_msgs.msg import Twist
+
+self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+msg = Twist()
+msg.linear.x = 0.1
+msg.angular.z = 0.0
+self.pub.publish(msg)</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 话题诊断</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>ros2 topic list -t
+ros2 topic echo /odom --once
+ros2 topic hz /scan
+ros2 topic info /scan --verbose
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}" -r 10</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>启动雷达后执行 <code>ros2 topic hz /scan</code>，记录频率；再执行 <code>ros2 topic info /scan --verbose</code>，看发布者数量与 QoS。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m6">
+        <summary>
+          <span class="module-num">06</span>
+          <span class="module-info"><h3>服务、动作与接口：让机器人“执行一件事”</h3><p>短任务用服务，长任务用动作，接口定义是契约</p></span>
+          <span class="module-meta"><span class="badge core">核心</span><span class="badge">40 min</span><input class="module-check" data-module="m6" type="checkbox" aria-label="标记第 6 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>区分</strong>服务与动作：是否需要进度反馈、是否能取消。</div>
+            <div class="objective"><strong>调用</strong>现有服务与动作，读懂 <code>.srv</code> / <code>.action</code> 定义。</div>
+            <div class="objective"><strong>设计</strong>一个自定义接口，知道消息包应独立于业务包。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>Service</h4><p>客户端发请求，服务端处理后返回。适合查询、校准、切换模式等短操作。</p></div>
+            <div class="concept"><h4>Action</h4><p>客户端发目标，服务端持续反馈进度，最后返回结果；中途可以取消。</p></div>
+            <div class="concept"><h4>接口定义</h4><p><code>.msg</code> 描述数据，<code>.srv</code> 用 <code>---</code> 分隔请求与响应，<code>.action</code> 分目标、反馈、结果。</p></div>
+            <div class="concept"><h4>接口包</h4><p>把自定义消息放在独立的 <code>xxx_interfaces</code> 包里，避免业务包互相依赖。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 服务与动作</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>ros2 service list -t
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 2.0, y: 2.0, theta: 0.0, name: 'turtle2'}"
+
+ros2 action list -t
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}" --feedback</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">interface · 自定义服务</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code># SetMode.srv
+string mode
+---
+bool success
+string message</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>用服务在 turtlesim 里生成第二只乌龟，再用动作让它旋转 90°；观察 <code>--feedback</code> 输出的过程。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m7">
+        <summary>
+          <span class="module-num">07</span>
+          <span class="module-info"><h3>参数、Launch 与 TF：把系统配置和坐标理清</h3><p>启动参数、批量启动、坐标变换，是工程化的分水岭</p></span>
+          <span class="module-meta"><span class="badge adv">进阶</span><span class="badge">45 min</span><input class="module-check" data-module="m7" type="checkbox" aria-label="标记第 7 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>参数化</strong>把目标点、速度、阈值从代码里拿出来，启动时覆盖。</div>
+            <div class="objective"><strong>写 Launch</strong>一次启动多个节点，并传入参数和命名空间。</div>
+            <div class="objective"><strong>理解 TF</strong>map → odom → base_link → laser 的坐标链。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>参数声明</h4><p>先 <code>declare_parameter</code> 再 <code>get_parameter</code>；启动时用 <code>--ros-args -p name:=value</code> 覆盖。</p></div>
+            <div class="concept"><h4>Launch 文件</h4><p>Python 描述启动逻辑：启动哪些节点、传什么参数、开什么命名空间、失败怎么处理。</p></div>
+            <div class="concept"><h4>TF2</h4><p>维护坐标系之间的变换。雷达看到的点，必须通过 TF 转到车体或地图坐标才有意义。</p></div>
+            <div class="concept"><h4>URDF</h4><p>用 link 和 joint 描述机器人结构；<code>robot_state_publisher</code> 根据关节角发布 TF。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">python · 声明参数</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>self.declare_parameter('target_x', 2.0)
+self.declare_parameter('front_stop', 0.50)
+self.target_x = self.get_parameter('target_x').value
+self.front_stop = self.get_parameter('front_stop').value</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">python · 最小 Launch</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument('target_x', default_value='2.0'),
+        Node(
+            package='robot_mission',
+            executable='mission',
+            parameters=[{'target_x': LaunchConfiguration('target_x')}],
+            output='screen',
+        ),
+    ])</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · TF 与 Launch</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>ros2 launch my_first_pkg demo.launch.py target_x:=1.5
+ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id map --child-frame-id base_link
+ros2 run tf2_tools view_frames</code></pre>
+          </div>
+          <div class="exercise"><strong>练习：</strong>把避障距离 <code>front_stop</code> 做成参数，分别用 0.35 和 0.50 启动，观察小车在障碍物前停下的位置差异。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m8">
+        <summary>
+          <span class="module-num">08</span>
+          <span class="module-info"><h3>DDS、QoS 与分布式：节点为什么能自动发现</h3><p>多机通信、数据可靠性、录包回放与排障</p></span>
+          <span class="module-meta"><span class="badge adv">进阶</span><span class="badge">30 min</span><input class="module-check" data-module="m8" type="checkbox" aria-label="标记第 8 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>理解</strong>DDS 的自动发现机制，以及 Domain ID 为什么必须一致。</div>
+            <div class="objective"><strong>配置</strong>QoS：可靠性、历史深度、持久性，避免“有话题但收不到数据”。</div>
+            <div class="objective"><strong>掌握</strong>多机通信、<code>ros2 bag</code> 录包回放和 <code>rqt_graph</code>。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>Domain ID</h4><p>同一网段、同一 Domain ID 的节点才能发现彼此。多机调试先统一 <code>ROS_DOMAIN_ID</code>。</p></div>
+            <div class="concept"><h4>Reliability</h4><p>Reliable 保证送达但可能重传；Best Effort 不重传，适合高频雷达和图像。</p></div>
+            <div class="concept"><h4>History / Depth</h4><p>缓存最近多少条消息。控制指令 depth 不宜过大，否则会执行过期指令。</p></div>
+            <div class="concept"><h4>Durability</h4><p>Transient Local 可以让晚加入的订阅者收到最后一条，例如地图、静态配置。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">python · 传感器 QoS</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import LaserScan
+
+self.create_subscription(
+    LaserScan, '/scan', self.on_scan, qos_profile_sensor_data
+)</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 多机与录包</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>export ROS_DOMAIN_ID=7
+export ROS_LOCALHOST_ONLY=0
+ros2 doctor
+ros2 bag record -o demo_bag /scan /odom /cmd_vel
+ros2 bag info demo_bag
+ros2 bag play demo_bag
+rqt_graph</code></pre>
+          </div>
+          <div class="note"><strong>排障顺序：</strong>先确认两个节点都 source 了环境 → 再确认 Domain ID 一致 → 再确认在同一网段/防火墙放行 → 最后看 QoS 是否兼容。</div>
+          <div class="exercise"><strong>练习：</strong>录一段 20 秒的 <code>/scan</code>、<code>/odom</code>、<code>/cmd_vel</code>，回放时用 <code>ros2 topic hz</code> 检查频率是否恢复。</div>
+        </div>
+      </details>
+
+      <details class="module" id="m9">
+        <summary>
+          <span class="module-num">09</span>
+          <span class="module-info"><h3>实战：把巡检、避障、机械臂串成一条链路</h3><p>从启动外设，到目标点停车，再到机械臂动作与主从映射</p></span>
+          <span class="module-meta"><span class="badge lab">实战</span><span class="badge">60 min</span><input class="module-check" data-module="m9" type="checkbox" aria-label="标记第 9 模块完成"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="module-body">
+          <div class="objective-grid">
+            <div class="objective"><strong>跑通</strong>里程计目标点 + 雷达前向急停 + 绕行转向。</div>
+            <div class="objective"><strong>接上</strong>到点后的机械臂动作，区分“自动动作”和“主从遥操作”。</div>
+            <div class="objective"><strong>复现</strong>用固定参数和检查命令，把演示变成可重复流程。</div>
+          </div>
+          <div class="concept-grid">
+            <div class="concept"><h4>定位</h4><p>短距离演示用 <code>/odom</code> 足够；长距离或大场景再上 AMCL + Nav2。</p></div>
+            <div class="concept"><h4>避障</h4><p>前向扇区小于 <code>front_stop</code> 就停车，选左右空间更大的一侧转 <code>avoid_turn_deg</code>，再继续朝目标点走。</p></div>
+            <div class="concept"><h4>到点动作</h4><p>任务节点到达目标后调用机械臂动作脚本，执行示教好的位姿序列。</p></div>
+            <div class="concept"><h4>主从映射</h4><p>主臂关节角经比例、符号、限幅后发给从臂；<code>scale</code> 控制跟随幅度。</p></div>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 巡检 + 到点动作</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>source /opt/tros/humble/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/robot_ws/install/setup.bash
+export ROS_DOMAIN_ID=0
+
+bash ~/run_demo.sh
+
+python3 ~/odom_mission.py --ros-args \
+  -p target_x:=2.0 -p target_y:=0.0 -p target_yaw:=0.0 \
+  -p max_linear:=0.08 -p front_stop:=0.50 \
+  -p avoid_turn_deg:=75.0 -p front_half_angle:=0.45 \
+  -p arm_demo:=true</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 主从遥操作</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>python3 ~/master_drag_node.py
+python3 ~/slave_joint_node.py --ros-args \
+  -p scale:=0.6 -p verbose:=true -p grip_index:=99 \
+  -p signs:="[1.0,-1.0,1.0,1.0,1.0]"</code></pre>
+          </div>
+          <div class="exercise"><strong>检查点：</strong>依次确认 <code>ros2 topic hz /scan</code> 有数据、<code>ros2 topic echo /odom --once</code> 有里程计、<code>ros2 topic echo /cmd_vel</code> 有速度指令；任何一项没有，都不要继续往下跑。</div>
+          <div class="note"><strong>演示提醒：</strong>机械臂不动时，先查供电、I2C 接线、K1 中位姿态和串口占用；不要一上来改代码。</div>
+        </div>
+      </details>
+    </section>
+
+    <section class="section" id="architecture">
+      <div class="section-head">
+        <div class="kicker">Architecture</div>
+        <h2>三层视角看懂机器人系统</h2>
+        <p>不要只记概念。先看软件分了几层，再看节点之间怎么连，最后看主从机械臂的控制链路。</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="架构视图">
+        <button class="tab active" type="button" data-tab="layer" role="tab" aria-selected="true">分层架构</button>
+        <button class="tab" type="button" data-tab="graph" role="tab" aria-selected="false">计算图</button>
+        <button class="tab" type="button" data-tab="master" role="tab" aria-selected="false">主从遥操作</button>
+      </div>
+
+      <div class="arch-panel active" id="panel-layer" role="tabpanel">
+        <div class="layer-stack">
+          <div class="layer"><div class="layer-label">应用层</div><div class="layer-items"><span>巡检任务</span><span>目标点调度</span><span>机械臂抓取</span><span>可视化</span></div></div>
+          <div class="layer"><div class="layer-label">能力层</div><div class="layer-items"><span>雷达避障</span><span>里程计定位</span><span>颜色 / YOLO 识别</span><span>运动学</span></div></div>
+          <div class="layer"><div class="layer-label">通信层</div><div class="layer-items"><span>Topic</span><span>Service</span><span>Action</span><span>Parameter</span><span>TF</span></div></div>
+          <div class="layer"><div class="layer-label">中间件层</div><div class="layer-items"><span>rclcpp</span><span>rclpy</span><span>DDS / RMW</span><span>QoS</span></div></div>
+          <div class="layer"><div class="layer-label">驱动层</div><div class="layer-items"><span>雷达驱动</span><span>相机驱动</span><span>底盘驱动</span><span>舵机 I2C</span></div></div>
+          <div class="layer"><div class="layer-label">硬件层</div><div class="layer-items"><span>RDK X5</span><span>STM32 / 驱动板</span><span>电机</span><span>雷达 / 相机</span><span>总线舵机</span></div></div>
+        </div>
+        <div class="arch-note">关键点：上层只依赖接口，不直接操作硬件。换雷达、换底盘时，只要话题和消息类型不变，任务层不用重写。</div>
+      </div>
+
+      <div class="arch-panel" id="panel-graph" role="tabpanel">
+        <div class="graph-shell">
+          <div class="graph-wrap">
+            <svg viewBox="0 0 1000 500" role="img" aria-label="巡检机器人 ROS2 计算图">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(56,189,248,0.55)"></path>
+                </marker>
+              </defs>
+
+              <path id="l-lidar-mission" class="graph-link" marker-end="url(#arrow)" d="M192 83 C226 83 226 276 262 276"></path>
+              <path id="l-camera-perception" class="graph-link" marker-end="url(#arrow)" d="M192 195 C226 195 226 147 262 147"></path>
+              <path id="l-odom-mission" class="graph-link" marker-end="url(#arrow)" d="M192 307 L262 307"></path>
+              <path id="l-perception-mission" class="graph-link" marker-end="url(#arrow)" d="M357 178 L357 250"></path>
+              <path id="l-mission-base" class="graph-link" marker-end="url(#arrow)" d="M452 278 C496 278 496 266 540 266"></path>
+              <path id="l-mission-arm" class="graph-link" marker-end="url(#arrow)" d="M452 312 C496 312 496 391 540 391"></path>
+              <path id="l-base-chassis" class="graph-link" marker-end="url(#arrow)" d="M710 281 L806 281"></path>
+              <path id="l-arm-armhw" class="graph-link" marker-end="url(#arrow)" d="M710 391 L806 391"></path>
+              <path id="l-mission-rviz" class="graph-link" marker-end="url(#arrow)" d="M452 262 C506 262 506 83 540 83"></path>
+              <path id="l-master-slave" class="graph-link" marker-end="url(#arrow)" d="M192 441 L262 441"></path>
+              <path id="l-slave-arm" class="graph-link" marker-end="url(#arrow)" d="M452 441 C506 441 506 401 540 401"></path>
+
+              <g class="graph-node" data-node="lidar" data-links="l-lidar-mission" tabindex="0" role="button" aria-label="激光雷达节点">
+                <rect x="24" y="52" width="168" height="62" rx="11"></rect>
+                <text x="108" y="80" text-anchor="middle" class="node-title">激光雷达</text>
+                <text x="108" y="98" text-anchor="middle" class="node-sub">/scan</text>
+              </g>
+              <g class="graph-node" data-node="camera" data-links="l-camera-perception" tabindex="0" role="button" aria-label="相机节点">
+                <rect x="24" y="164" width="168" height="62" rx="11"></rect>
+                <text x="108" y="192" text-anchor="middle" class="node-title">相机</text>
+                <text x="108" y="210" text-anchor="middle" class="node-sub">/image_raw</text>
+              </g>
+              <g class="graph-node" data-node="odom" data-links="l-odom-mission" tabindex="0" role="button" aria-label="里程计节点">
+                <rect x="24" y="276" width="168" height="62" rx="11"></rect>
+                <text x="108" y="304" text-anchor="middle" class="node-title">底盘里程计</text>
+                <text x="108" y="322" text-anchor="middle" class="node-sub">/odom</text>
+              </g>
+              <g class="graph-node" data-node="perception" data-links="l-camera-perception l-perception-mission" tabindex="0" role="button" aria-label="感知节点">
+                <rect x="262" y="116" width="190" height="62" rx="11"></rect>
+                <text x="357" y="144" text-anchor="middle" class="node-title">感知节点</text>
+                <text x="357" y="162" text-anchor="middle" class="node-sub">YOLO / HSV</text>
+              </g>
+              <g class="graph-node active" data-node="mission" data-links="l-lidar-mission l-odom-mission l-perception-mission l-mission-base l-mission-arm l-mission-rviz" tabindex="0" role="button" aria-label="任务节点">
+                <rect x="262" y="250" width="190" height="82" rx="11"></rect>
+                <text x="357" y="282" text-anchor="middle" class="node-title">mission_node</text>
+                <text x="357" y="301" text-anchor="middle" class="node-sub">目标点 / 避障 / 停车</text>
+              </g>
+              <g class="graph-node" data-node="rviz" data-links="l-mission-rviz" tabindex="0" role="button" aria-label="RViz 节点">
+                <rect x="540" y="52" width="170" height="62" rx="11"></rect>
+                <text x="625" y="80" text-anchor="middle" class="node-title">RViz2</text>
+                <text x="625" y="98" text-anchor="middle" class="node-sub">/scan /odom /tf</text>
+              </g>
+              <g class="graph-node" data-node="base" data-links="l-mission-base l-base-chassis" tabindex="0" role="button" aria-label="底盘驱动节点">
+                <rect x="540" y="250" width="170" height="62" rx="11"></rect>
+                <text x="625" y="278" text-anchor="middle" class="node-title">base_driver</text>
+                <text x="625" y="296" text-anchor="middle" class="node-sub">/cmd_vel</text>
+              </g>
+              <g class="graph-node" data-node="arm" data-links="l-mission-arm l-arm-armhw l-slave-arm" tabindex="0" role="button" aria-label="机械臂驱动节点">
+                <rect x="540" y="360" width="170" height="62" rx="11"></rect>
+                <text x="625" y="388" text-anchor="middle" class="node-title">arm_driver</text>
+                <text x="625" y="406" text-anchor="middle" class="node-sub">/arm_command</text>
+              </g>
+              <g class="graph-node" data-node="chassis" data-links="l-base-chassis" tabindex="0" role="button" aria-label="底盘硬件">
+                <rect x="806" y="250" width="170" height="62" rx="11"></rect>
+                <text x="891" y="278" text-anchor="middle" class="node-title">底盘 / 电机</text>
+                <text x="891" y="296" text-anchor="middle" class="node-sub">hardware</text>
+              </g>
+              <g class="graph-node" data-node="armhw" data-links="l-arm-armhw" tabindex="0" role="button" aria-label="机械臂硬件">
+                <rect x="806" y="360" width="170" height="62" rx="11"></rect>
+                <text x="891" y="388" text-anchor="middle" class="node-title">机械臂 / 夹爪</text>
+                <text x="891" y="406" text-anchor="middle" class="node-sub">I2C 0x15</text>
+              </g>
+              <g class="graph-node" data-node="master" data-links="l-master-slave" tabindex="0" role="button" aria-label="主臂节点">
+                <rect x="24" y="410" width="168" height="62" rx="11"></rect>
+                <text x="108" y="438" text-anchor="middle" class="node-title">主臂</text>
+                <text x="108" y="456" text-anchor="middle" class="node-sub">/master_joint_states</text>
+              </g>
+              <g class="graph-node" data-node="slave" data-links="l-master-slave l-slave-arm" tabindex="0" role="button" aria-label="从臂节点">
+                <rect x="262" y="410" width="190" height="62" rx="11"></rect>
+                <text x="357" y="438" text-anchor="middle" class="node-title">slave_joint_node</text>
+                <text x="357" y="456" text-anchor="middle" class="node-sub">比例 / 符号 / 限幅</text>
+              </g>
+            </svg>
+            <div class="graph-legend">
+              <span><i style="background:#38bdf8"></i>Topic 数据流</span>
+              <span><i style="background:#34d399"></i>硬件/执行器</span>
+              <span>点击节点查看输入输出</span>
+            </div>
+          </div>
+
+          <aside class="graph-info" id="graphInfo" aria-live="polite">
+            <div class="role" id="infoRole">Mission</div>
+            <h3 id="infoTitle">mission_node</h3>
+            <p id="infoDesc">订阅雷达与里程计，判断前方是否被挡住；选择绕行方向，向底盘发布速度指令。到达目标后触发机械臂动作。</p>
+            <div class="info-list" id="infoList">
+              <div><span>订阅</span><span>/scan · /odom</span></div>
+              <div><span>发布</span><span>/cmd_vel · /arm_command</span></div>
+              <div><span>关键参数</span><span>front_stop · avoid_turn_deg</span></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div class="arch-panel" id="panel-master" role="tabpanel">
+        <div class="flow">
+          <div class="flow-node"><div class="role">Input</div><h4>主臂</h4><p>拖动示教，读取各关节角度</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="role">Bridge</div><h4>master_drag_node</h4><p>滤波、比例缩放、符号修正</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node accent"><div class="role">Topic</div><h4>/master_joint_states</h4><p>标准化的关节角消息</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="role">Bridge</div><h4>slave_joint_node</h4><p>限幅、夹爪映射、I2C 下发</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><div class="role">Output</div><h4>从臂</h4><p>六个舵机 + 夹爪执行</p></div>
+        </div>
+        <div class="split" style="margin-top:12px">
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">mapping · 关键参数</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>scale:=0.6          # 主臂转 1°，从臂转 0.6°
+signs:=[1,-1,1,1,1] # 修正安装方向
+grip_index:=99      # 夹爪通道
+verbose:=true       # 打印关节角</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">safety · 安全边界</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code># 从臂中位：K1 姿态
+# 先限幅，再下发
+# 上电前确认舵机供电
+# 卡住时立即断电，不要硬拽</code></pre>
+          </div>
+        </div>
+        <div class="arch-note">主从映射不是“复制角度”，而是“复制意图”：比例、符号、限幅、夹爪通道都要单独标定。先小幅度测试，再放开行程。</div>
+      </div>
+    </section>
+
+    <section class="section" id="commands">
+      <div class="section-head">
+        <div class="kicker">Cheat Sheet</div>
+        <h2>ROS2 命令速查：先会查，再会写</h2>
+        <p>按类别筛选或直接搜索。所有命令都假设已经 source 过环境；带尖括号的占位符要替换成你的包名、节点名或话题名。</p>
+      </div>
+
+      <div class="cmd-toolbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <input type="search" id="cmdSearch" placeholder="搜索命令或说明，例如 scan、参数、建包…" autocomplete="off">
+        </label>
+        <div class="chips" id="cmdFilters">
+          <button class="filter-chip active" type="button" data-filter="all">全部</button>
+          <button class="filter-chip" type="button" data-filter="env">环境</button>
+          <button class="filter-chip" type="button" data-filter="pkg">建包</button>
+          <button class="filter-chip" type="button" data-filter="node">节点</button>
+          <button class="filter-chip" type="button" data-filter="topic">话题</button>
+          <button class="filter-chip" type="button" data-filter="service">服务</button>
+          <button class="filter-chip" type="button" data-filter="action">动作</button>
+          <button class="filter-chip" type="button" data-filter="param">参数</button>
+          <button class="filter-chip" type="button" data-filter="launch">Launch</button>
+          <button class="filter-chip" type="button" data-filter="debug">调试</button>
+        </div>
+      </div>
+
+      <div class="cmd-list" id="cmdList">
+        <div class="cmd-row" data-cat="env"><code>source /opt/ros/humble/setup.bash</code><div class="cmd-desc">加载普通 ROS2 Humble 环境</div><div class="cmd-cat"><span>ENV</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="env"><code>source /opt/tros/humble/setup.bash</code><div class="cmd-desc">RDK X5 先加载 TROS 扩展环境</div><div class="cmd-cat"><span>ENV</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="env"><code>ros2 doctor</code><div class="cmd-desc">检查 ROS2 环境、网络与中间件</div><div class="cmd-cat"><span>ENV</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="pkg"><code>ros2 pkg create --build-type ament_python my_pkg --dependencies rclpy</code><div class="cmd-desc">创建 Python 功能包</div><div class="cmd-cat"><span>PKG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="pkg"><code>colcon build --symlink-install</code><div class="cmd-desc">编译工作空间，源码改动无需重复拷贝</div><div class="cmd-cat"><span>PKG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="pkg"><code>source install/setup.bash</code><div class="cmd-desc">加载当前工作空间的包</div><div class="cmd-cat"><span>PKG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="node"><code>ros2 run &lt;pkg&gt; &lt;node&gt;</code><div class="cmd-desc">运行指定功能包中的节点</div><div class="cmd-cat"><span>NODE</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="node"><code>ros2 node list</code><div class="cmd-desc">列出当前运行的所有节点</div><div class="cmd-cat"><span>NODE</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="node"><code>ros2 node info /mission_node</code><div class="cmd-desc">查看节点的发布、订阅、服务和动作</div><div class="cmd-cat"><span>NODE</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="topic"><code>ros2 topic list -t</code><div class="cmd-desc">列出话题及消息类型</div><div class="cmd-cat"><span>TOPIC</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="topic"><code>ros2 topic echo /scan --once</code><div class="cmd-desc">打印一条雷达数据后退出</div><div class="cmd-cat"><span>TOPIC</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="topic"><code>ros2 topic hz /scan</code><div class="cmd-desc">检查雷达发布频率是否正常</div><div class="cmd-cat"><span>TOPIC</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="topic"><code>ros2 topic info /scan --verbose</code><div class="cmd-desc">查看发布者、订阅者和 QoS</div><div class="cmd-cat"><span>TOPIC</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="topic"><code>ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}" -r 10</code><div class="cmd-desc">以 10 Hz 发布前进速度，测试底盘</div><div class="cmd-cat"><span>TOPIC</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="service"><code>ros2 service list -t</code><div class="cmd-desc">列出服务及服务类型</div><div class="cmd-cat"><span>SERVICE</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="service"><code>ros2 service call /spawn turtlesim/srv/Spawn "{x: 2.0, y: 2.0, theta: 0.0, name: 'turtle2'}"</code><div class="cmd-desc">调用服务生成第二只乌龟</div><div class="cmd-cat"><span>SERVICE</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="action"><code>ros2 action list -t</code><div class="cmd-desc">列出动作及动作类型</div><div class="cmd-cat"><span>ACTION</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="action"><code>ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}" --feedback</code><div class="cmd-desc">发送旋转目标并查看反馈</div><div class="cmd-cat"><span>ACTION</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="param"><code>ros2 param list</code><div class="cmd-desc">列出所有节点参数</div><div class="cmd-cat"><span>PARAM</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="param"><code>ros2 param set /mission_node front_stop 0.5</code><div class="cmd-desc">运行时修改避障停车距离</div><div class="cmd-cat"><span>PARAM</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="launch"><code>ros2 launch &lt;pkg&gt; demo.launch.py target_x:=1.5</code><div class="cmd-desc">启动 Launch 文件并传入参数</div><div class="cmd-cat"><span>LAUNCH</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="debug"><code>ros2 bag record -o demo_bag /scan /odom /cmd_vel</code><div class="cmd-desc">录制关键话题，便于复盘</div><div class="cmd-cat"><span>DEBUG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="debug"><code>ros2 bag play demo_bag</code><div class="cmd-desc">回放录制的数据</div><div class="cmd-cat"><span>DEBUG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="debug"><code>ros2 run tf2_tools view_frames</code><div class="cmd-desc">生成 TF 坐标树 PDF 和文本</div><div class="cmd-cat"><span>DEBUG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+        <div class="cmd-row" data-cat="debug"><code>rqt_graph</code><div class="cmd-desc">可视化节点与话题连接关系</div><div class="cmd-cat"><span>DEBUG</span> <button class="cmd-copy" type="button">复制</button></div></div>
+      </div>
+      <div class="empty" id="cmdEmpty">没有匹配的命令，换个关键词试试。</div>
+    </section>
+
+    <section class="section" id="lab">
+      <div class="section-head">
+        <div class="kicker">Hands-on Lab</div>
+        <h2>实验手册：一条可复现的巡检链路</h2>
+        <p>目标不是“看起来能跑”，而是每一步都有检查点。任何一步没通过，就停下来排查，不要带着问题往下走。</p>
+      </div>
+
+      <div class="lab-grid">
+        <article class="lab-step">
+          <div class="n">STEP 01 · 上电前</div>
+          <h4>检查供电与接线</h4>
+          <p>雷达、相机、底盘驱动板、机械臂扩展板分别确认供电；I2C 和 USB 不要带电插拔。</p>
+          <ul class="checklist">
+            <li>雷达转起来，USB 已识别</li>
+            <li>底盘驱动板与 RDK 通信正常</li>
+            <li>机械臂扩展板独立供电</li>
+          </ul>
+        </article>
+
+        <article class="lab-step">
+          <div class="n">STEP 02 · 环境</div>
+          <h4>加载 ROS2 / TROS</h4>
+          <p>顺序很重要：先 TROS，再 ROS2，最后工作空间。</p>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>source /opt/tros/humble/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/robot_ws/install/setup.bash
+export ROS_DOMAIN_ID=0</code></pre>
+          </div>
+        </article>
+
+        <article class="lab-step">
+          <div class="n">STEP 03 · 外设</div>
+          <h4>启动相机与图传</h4>
+          <p><code>run_demo.sh</code> 负责把相机服务拉起来，先确认两个画面都能打开。</p>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>bash ~/run_demo.sh
+# 浏览器打开
+# http://&lt;板子IP&gt;:8080
+# http://&lt;板子IP&gt;:8081</code></pre>
+          </div>
+        </article>
+
+        <article class="lab-step">
+          <div class="n">STEP 04 · 验数据</div>
+          <h4>先看话题，再跑任务</h4>
+          <p>雷达、里程计、速度指令三项都正常，才说明系统具备闭环条件。</p>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>ros2 topic list -t
+ros2 topic hz /scan
+ros2 topic echo /odom --once
+ros2 topic echo /cmd_vel --once</code></pre>
+          </div>
+        </article>
+
+        <article class="lab-step full">
+          <div class="n">STEP 05 · 巡检</div>
+          <h4>目标点 + 雷达避障 + 到点动作</h4>
+          <p><code>front_stop:=0.50</code> 表示前方 0.5 米内停车并绕行；<code>arm_demo:=true</code> 表示到点后触发机械臂动作。</p>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 一键复制</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>python3 ~/odom_mission.py --ros-args \
+  -p target_x:=2.0 -p target_y:=0.0 -p target_yaw:=0.0 \
+  -p max_linear:=0.08 -p front_stop:=0.50 \
+  -p avoid_turn_deg:=75.0 -p front_half_angle:=0.45 \
+  -p arm_demo:=true</code></pre>
+          </div>
+        </article>
+
+        <article class="lab-step full">
+          <div class="n">STEP 06 · 机械臂</div>
+          <h4>自动动作与主从遥操作分开测</h4>
+          <p>先单独验证机械臂动作，再打开主臂映射。不要同时改动作脚本和映射参数，否则出问题无法定位。</p>
+          <div class="code-block">
+            <div class="code-head"><span class="code-title">terminal · 主从映射</span><button class="copy-btn" type="button">复制</button></div>
+            <pre><code>python3 ~/master_drag_node.py
+python3 ~/slave_joint_node.py --ros-args \
+  -p scale:=0.6 -p verbose:=true -p grip_index:=99 \
+  -p signs:="[1.0,-1.0,1.0,1.0,1.0]"</code></pre>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="quiz">
+      <div class="section-head">
+        <div class="kicker">Self Check</div>
+        <h2>五道题，检查你是否真的理解</h2>
+        <p>选完提交后会自动判分并显示解析。答错不丢人，回到对应模块再看一遍命令即可。</p>
+      </div>
+
+      <div class="quiz-card">
+        <div id="quizQuestions"></div>
+        <div class="quiz-actions">
+          <button class="btn btn-primary" id="quizSubmit" type="button">提交答案</button>
+          <button class="btn btn-ghost" id="quizReset" type="button">重新作答</button>
+        </div>
+        <div class="quiz-result" id="quizResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="section-head">
+        <div class="kicker">FAQ</div>
+        <h2>入门阶段最容易卡住的地方</h2>
+        <p>这些问题通常不是“代码写错了”，而是环境、QoS、网络或坐标没对齐。</p>
+      </div>
+
+      <div class="faq">
+        <details>
+          <summary>ROS1 和 ROS2 到底差在哪？我该学哪个？</summary>
+          <p>ROS1 依赖中心 Master，ROS2 用 DDS 做去中心化发现；ROS2 还带来更好的多机、实时、QoS 和生命周期管理。新项目直接用 ROS2 Humble，ROS1 只在维护老设备时学。</p>
+        </details>
+        <details>
+          <summary><code>ros2 topic list</code> 看不到话题怎么办？</summary>
+          <p>按顺序查：节点是否真的启动、当前终端是否 source 了环境、两台机器的 <code>ROS_DOMAIN_ID</code> 是否一致、是否在同一网段、QoS 是否兼容。最后再看 <code>ros2 node info</code> 里节点到底有没有发布。</p>
+        </details>
+        <details>
+          <summary>雷达有 <code>/scan</code>，但避障节点收不到？</summary>
+          <p>最常见是 QoS 不匹配。雷达常用 Best Effort，订阅端如果用默认 Reliable 会收不到。用 <code>ros2 topic info /scan --verbose</code> 对比两端的 Reliability 和 Durability。</p>
+        </details>
+        <details>
+          <summary>两块板子/两台电脑怎么通信？</summary>
+          <p>同一局域网、同一 <code>ROS_DOMAIN_ID</code>、<code>ROS_LOCALHOST_ONLY=0</code>，并放行组播或配置单播。先用 <code>ros2 doctor</code> 和 <code>ros2 node list</code> 验证发现，再传大流量图像。</p>
+        </details>
+        <details>
+          <summary>SLAM 建图和雷达避障是一回事吗？</summary>
+          <p>不是。SLAM 解决“我在哪、环境长什么样”，输出地图和位姿；避障解决“前面有没有东西、现在怎么绕”。空旷现场可以不建图，直接用里程计 + 前向雷达做短距离任务。</p>
+        </details>
+        <details>
+          <summary>RDK X5 上为什么很多命令和教程不一样？</summary>
+          <p>RDK 用的是 TROS，多了 BPU、摄像头和地平线扩展包，但底层仍是 ROS2 Humble。先 <code>source /opt/tros/humble/setup.bash</code>，再 source 普通 ROS2，绝大多数命令通用。</p>
+        </details>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>ROS2 机器人入门课 · 静态单页 · 无需联网</span>
+      <span>Node → Topic → Service → Action → System</span>
+    </footer>
+  </main>
+
+  <button class="to-top" id="toTop" type="button" aria-label="回到顶部" title="回到顶部">↑</button>
+  <script src="app.js"></script>
+</body>
+</html>
+
+

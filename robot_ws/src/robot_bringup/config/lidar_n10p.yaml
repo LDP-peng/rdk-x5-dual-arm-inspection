@@ -1,0 +1,75 @@
+x10:
+  lslidar_driver_node:
+    ros__parameters:
+      lidar_type: "X10"
+      lidar_model: "N10Plus"
+      serial_port: "/dev/wheeltec_lidar"
+      device_ip: "192.168.1.200"
+      msop_port: 2368
+      difop_port: 2369
+      packet_rate: 188.0
+
+      frame_id: "laser_link"
+      pointcloud_topic: "lslidar_point_cloud"
+      laserscan_topic: "/scan"
+      use_time_service: false
+      use_first_point_time: false
+      publish_scan: true
+      use_high_precision: true
+      publish_multiecholaserscan: false
+      enable_noise_filter: false
+      N10Plus_hz: 10
+      min_range: 0.05
+      max_range: 12.0
+
+      angle_disable_min: [0]
+      angle_disable_max: [0]
+
+      is_pretreatment: false
+      x_offset: 0.0
+      y_offset: 0.0
+      z_offset: 0.0
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+
+      is_MatrixTransformation: false
+      transform_main:
+        [
+          0.3514713644981384,
+          0.3227383494377136,
+          0.878810465335846,
+          1.250789999961853,
+          -0.17116132378578186,
+          0.9450311660766602,
+          -0.27860331535339355,
+          -0.3601331412792206,
+          -0.9204192757606506,
+          -0.05249723792076111,
+          0.38739171624183655,
+          1.9063990116119385,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+        ]
+      transform_imu:
+        [
+          0.999537,
+          -0.030429,
+          0.00027,
+          -1.047623,
+          0.030413,
+          0.999231,
+          0.024782,
+          5.966497,
+          -0.001024,
+          -0.024763,
+          0.999693,
+          0.638128,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+        ]
+      # pcap: "xxx.pcap"

@@ -1,0 +1,13 @@
+fire_smoke_detector:
+  ros__parameters:
+    backend: "ultralytics"
+    model_path: "models/fire_smoke_yolov8n.pt"
+    label_path: "models/fire_smoke.names"
+    image_topic: "/image_raw"
+    conf_threshold: 0.35
+    iou_threshold: 0.45
+    input_size: 640
+    device: "cpu"
+    publish_annotated: true
+    alert_classes: ["fire", "smoke"]
+    alert_consecutive_frames: 3

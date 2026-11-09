@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>双机械臂主从遥操作移动巡检作业系统</title>
+  <link rel="stylesheet" href="poster.css">
+</head>
+<body>
+  <div class="stage">
+    <main class="poster" id="poster">
+      <header class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="dot"></span>RDK X5 · ROS 2 · 48H HACKATHON</div>
+          <h1>双机械臂<span class="accent">主从遥操作</span><br>移动巡检作业系统</h1>
+          <p class="tagline">人不到现场，手也能伸到现场。</p>
+          <p class="intro">底盘自主到达，主臂远程操控，车载从臂同步复刻，完成按钮、阀柜、夹取等接触式作业。</p>
+          <div class="hero-tags">
+            <span class="tag">异构主从映射</span>
+            <span class="tag">当前位姿零点</span>
+            <span class="tag">限位保护</span>
+            <span class="tag">ROS 2 DDS</span>
+            <span class="tag">N10P 激光雷达</span>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-panel-head">
+            <span class="kicker">LIVE METRICS</span>
+            <span class="status"><i></i>实机链路</span>
+          </div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="value">2<em>m</em></div>
+              <div class="label">自主巡航 / 定点停车</div>
+            </div>
+            <div class="metric">
+              <div class="value">≤5<em>cm</em></div>
+              <div class="label">2 m 停车误差</div>
+            </div>
+            <div class="metric">
+              <div class="value">10<em>Hz</em></div>
+              <div class="label">激光雷达 /scan</div>
+            </div>
+            <div class="metric">
+              <div class="value">15<em>Hz</em></div>
+              <div class="label">主臂关节流</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="body-grid">
+        <div class="column left">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="left-head">
+                <span class="kicker">PROBLEM / 01</span>
+                <h2>现场痛点</h2>
+              </div>
+              <p>危险、狭窄、重复的巡检场景，需要“能到”也能“能操作”。</p>
+            </div>
+            <div class="problem-grid">
+              <div class="problem-item">
+                <b>到不了</b>
+                <span>危险区域、狭窄通道、夜间环境，人员进入成本高。</span>
+              </div>
+              <div class="problem-item">
+                <b>够不着</b>
+                <span>只看画面无法完成按钮、阀门、柜门等接触作业。</span>
+              </div>
+              <div class="problem-item">
+                <b>不稳定</b>
+                <span>重复巡检强度大，人工状态波动，难持续标准化。</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div class="left-head">
+                <span class="kicker">EDGE / 04</span>
+                <h2>技术亮点</h2>
+              </div>
+              <p>把遥操作做成可演示、可复现、可安全启动的闭环。</p>
+            </div>
+            <div class="highlights">
+              <div class="highlight">
+                <div class="icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/><path d="M10 12h4"/></svg></div>
+                <b>异构主从</b>
+                <small>主从臂型号不同也能映射</small>
+              </div>
+              <div class="highlight">
+                <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                <b>安全启动</b>
+                <small>当前位姿零点 / 限位保护</small>
+              </div>
+              <div class="highlight">
+                <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
+                <b>分层解耦</b>
+                <small>底盘自主 / 机械臂遥操作独立</small>
+              </div>
+              <div class="highlight">
+                <div class="icon"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/></svg></div>
+                <b>单板部署</b>
+                <small>RDK X5 承载通信与控制</small>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="column middle">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="left-head">
+                <span class="kicker">SYSTEM / 02</span>
+                <h2>系统架构</h2>
+              </div>
+              <p>操作端与作业端通过 ROS 2 解耦；底盘负责到达，机械臂负责作业。</p>
+            </div>
+            <div class="arch">
+              <div class="arch-lane">
+                <div class="node"><strong>主臂</strong><small>操作端 · 关节角</small></div>
+                <div class="link"><span>ROS 2 · 15 Hz</span><small>/master/joint_states</small></div>
+                <div class="node core"><strong>RDK X5</strong><small>异构映射 · 限位保护</small></div>
+                <div class="link"><span>I2C 0x15</span><small>5 关节 + 夹爪</small></div>
+                <div class="node slave"><strong>从臂</strong><small>车载 · 6 轴</small></div>
+              </div>
+              <div class="arch-lane">
+                <div class="node"><strong>移动底盘</strong><small>C30D 差速</small></div>
+                <div class="link"><span>odom · 20 Hz</span><small>/cmd_vel</small></div>
+                <div class="node core"><strong>RDK X5</strong><small>任务编排 · 避障</small></div>
+                <div class="link"><span>scan · 10 Hz</span><small>N10P 雷达</small></div>
+                <div class="node"><strong>环境感知</strong><small>0.45 m 触发</small></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div class="left-head">
+                <span class="kicker">DEMO / 03</span>
+                <h2>90 秒演示流程</h2>
+              </div>
+              <p>一键启动，车到点后由主臂接管作业。</p>
+            </div>
+            <div class="flow">
+              <div class="flow-step"><div class="num">01</div><b>自主前进</b><small>里程计闭环</small></div>
+              <div class="flow-step"><div class="num">02</div><b>雷达避障</b><small>0.45 m 触发</small></div>
+              <div class="flow-step"><div class="num">03</div><b>定点停车</b><small>2 m 巡检点</small></div>
+              <div class="flow-step"><div class="num">04</div><b>主臂遥操作</b><small>关节流 15 Hz</small></div>
+              <div class="flow-step"><div class="num">05</div><b>从臂作业</b><small>5+1 路映射</small></div>
+              <div class="flow-step"><div class="num">06</div><b>自动返航</b><small>回车确认</small></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="column right">
+          <section class="panel">
+            <div class="panel-head">
+              <div class="left-head">
+                <span class="kicker">SCENARIO / 05</span>
+                <h2>应用场景</h2>
+              </div>
+              <p>从“看得见”升级到“够得着、操作得了”。</p>
+            </div>
+            <div class="scenarios">
+              <div class="scenario"><span class="idx">01</span><div><b>变电站 / 配电房</b><small>按按钮 · 开柜门 · 测温取样</small></div></div>
+              <div class="scenario"><span class="idx">02</span><div><b>地铁站 / 隧道管廊</b><small>夜间巡检 · 清障 · 设备复位</small></div></div>
+              <div class="scenario"><span class="idx">03</span><div><b>化工 / 核工业</b><small>人在安全区 · 从臂进入危险区</small></div></div>
+              <div class="scenario"><span class="idx">04</span><div><b>仓储 / 机房</b><small>夜间盘点 · 货架取放 · 阀门操作</small></div></div>
+              <div class="scenario"><span class="idx">05</span><div><b>应急救援 / 安防</b><small>先遣侦察 · 开门 · 移障</small></div></div>
+              <div class="scenario"><span class="idx">06</span><div><b>教学科研</b><small>主从遥操作 · ROS 2 · SLAM 平台</small></div></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="closing-card">
+              <span class="kicker">VALUE / 06</span>
+              <p class="closing-quote">让移动机器人负责<span>到达</span>，<br>让机械臂负责<span>作业</span>。</p>
+              <div class="closing-tags">
+                <span>一键启动</span>
+                <span>90 秒闭环</span>
+                <span>安全可复现</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-line"></div>
+        <div class="footer-content">
+          <div><strong>RDK X5</strong> · ROS 2 Humble · N10P LiDAR · Dual Arm</div>
+          <div>2026 · 移动巡检作业系统</div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <button class="print-btn" type="button" onclick="window.print()">打印 / 导出 PDF</button>
+  <script src="poster.js"></script>
+</body>
+</html>

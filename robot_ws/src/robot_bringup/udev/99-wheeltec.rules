@@ -1,0 +1,5 @@
+# C30D uses the CH9102 USB serial port with ID_SERIAL_SHORT=5CF0016185.
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ENV{ID_VENDOR_ID}=="1a86", ENV{ID_MODEL_ID}=="55d4", ENV{ID_SERIAL_SHORT}=="5CF0016185", MODE:="0660", GROUP:="dialout", SYMLINK+="wheeltec_controller"
+
+# N10P uses the other CH9102 USB serial port with ID_SERIAL_SHORT=0001.
+SUBSYSTEM=="tty", KERNEL=="ttyACM*", ENV{ID_VENDOR_ID}=="1a86", ENV{ID_MODEL_ID}=="55d4", ENV{ID_SERIAL_SHORT}=="0001", MODE:="0660", GROUP:="dialout", SYMLINK+="wheeltec_lidar"
